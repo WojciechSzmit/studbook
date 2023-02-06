@@ -1,0 +1,285 @@
+import { GLOBALTYPES } from "./globalTypes";
+import { cloudinaryUpload } from "../../services/cloudinaryUpload";
+import {
+  postDataAPI,
+  getDataAPI,
+  patchtDataAPI,
+  deleteDataAPI,
+} from "../../services/axiosRetrieveData";
+import { createNotify, removeNotify } from "./notifyAction";
+
+export const POST_TYPES = {
+  CREATE_POST: "CREATE_POST",
+  LOADING_POST: "LOADING_POST",
+  GET_POSTS: "GET_POSTS",
+  UPDATE_POST: "UPDATE_POST",
+  GET_POST: "GET_POST",
+  DELETE_POST: "DELETE_POST",
+};
+
+export const createPost =
+  ({ content, images, auth, socket }) =>
+  async (dispatch) => {
+    // console.log({ content, images, auth });
+    let media = [];
+    try {
+      dispatch({
+        type: GLOBALTYPES.ALERT,
+        payload: { loading: true },
+      });
+      if (images.length > 0) media = await cloudinaryUpload(images);
+
+      const res = await postDataAPI(
+        "posts",
+        { content, images: media },
+        auth.token
+      );
+
+      dispatch({
+        type: POST_TYPES.CREATE_POST,
+        payload: { ...res.data.newPost, user: auth.user },
+      });
+
+      //console.log(res);
+      // console.log(media);
+      dispatch({
+        type: GLOBALTYPES.ALERT,
+        payload: { loading: false },
+      });
+
+      //console.log(res);
+      //Powiadomienia
+      const msg = {
+        id: res.data.newPost._id,
+        text: " dodał nową wiadomość.",
+        recipients: res.data.newPost.user.followers,
+        url: `/post/${res.data.newPost._id}`,
+        content,
+        image: media[0].url,
+      };
+
+      dispatch(createNotify({ msg, auth, socket }));
+    } catch (error) {
+      dispatch({
+        type: GLOBALTYPES.ALERT,
+        payload: { error: error.response.data.msg },
+      });
+    }
+  };
+
+export const getPosts = (token) => async (dispatch) => {
+  //console.log(token);
+  try {
+    dispatch({ type: POST_TYPES.LOADING_POST, payload: true });
+    const res = await getDataAPI("posts", token);
+
+    dispatch({
+      type: POST_TYPES.GET_POSTS,
+      payload: { ...res.data, page: 2 },
+    });
+    dispatch({ type: POST_TYPES.LOADING_POST, payload: false });
+  } catch (error) {
+    dispatch({
+      type: GLOBALTYPES.ALERT,
+      payload: { error: error.response.data.msg },
+    });
+  }
+};
+
+export const updatePost =
+  ({ content, images, auth, form_status }) =>
+  async (dispatch) => {
+    let media = [];
+    const imgNewUrl = images.filter((img) => !img.url);
+    const imgOldUrl = images.filter((img) => img.url);
+
+    if (
+      form_status.content === content &&
+      imgNewUrl.length === 0 &&
+      imgNewUrl.length === form_status.images.length
+    )
+      return;
+    try {
+      dispatch({
+        type: GLOBALTYPES.ALERT,
+        payload: { loading: true },
+      });
+      if (imgNewUrl.length > 0) media = await cloudinaryUpload(imgNewUrl);
+
+      const res = await patchtDataAPI(
+        `post/${form_status._id}`,
+        { content, images: [...imgOldUrl, ...media] },
+        auth.token
+      );
+
+      //console.log(res);
+
+      dispatch({ type: POST_TYPES.UPDATE_POST, payload: res.data.newPost });
+
+      //console.log(res);
+      // console.log(media);
+
+      dispatch({
+        type: GLOBALTYPES.ALERT,
+        payload: { success: res.data.msg },
+      });
+    } catch (error) {
+      dispatch({
+        type: GLOBALTYPES.ALERT,
+        payload: { error: error.response.data.msg },
+      });
+    }
+  };
+
+//polubienia
+export const likePost =
+  ({ post, auth, socket }) =>
+  async (dispatch) => {
+    //console.log(post);
+    const newPost = { ...post, likes: [...post.likes, auth.user] };
+    //console.log(newPost);
+    dispatch({ type: POST_TYPES.UPDATE_POST, payload: newPost });
+
+    socket.emit("likePost", newPost);
+
+    try {
+      await patchtDataAPI(`post/${post._id}/like`, null, auth.token);
+
+      //Powiadomienia
+      const msg = {
+        id: auth.user._id,
+        text: " polubił Twój post.",
+        recipients: [post.user._id],
+        url: `/post/${post._id}`,
+        content: post.content,
+        image: post.images[0].url,
+      };
+
+      dispatch(createNotify({ msg, auth, socket }));
+    } catch (error) {
+      dispatch({
+        type: GLOBALTYPES.ALERT,
+        payload: { error: error.response.data.msg },
+      });
+    }
+  };
+
+//odlubienia
+export const unLikePost =
+  ({ post, auth, socket }) =>
+  async (dispatch) => {
+    //console.log(post);
+    //console.log({ post });
+    const newPost = {
+      ...post,
+      likes: post.likes.filter((like) => like._id !== auth.user._id),
+    };
+    //console.log({ newPost });
+    //console.log(newPost);
+    dispatch({ type: POST_TYPES.UPDATE_POST, payload: newPost });
+
+    socket.emit("unLikePost", newPost);
+
+    try {
+      await patchtDataAPI(`post/${post._id}/unlike`, null, auth.token);
+
+      //Notyfikacje
+      const msg = {
+        id: auth.user._id,
+        text: " polubił Twój post.",
+        recipients: [post.user._id],
+        url: `/post/${post._id}}`,
+      };
+
+      dispatch(removeNotify({ msg, auth, socket }));
+    } catch (error) {
+      dispatch({
+        type: GLOBALTYPES.ALERT,
+        payload: { error: error.response.data.msg },
+      });
+    }
+  };
+
+//detale postu
+
+export const getPost =
+  ({ detailPost, id, auth }) =>
+  async (dispatch) => {
+    if (detailPost.every((post) => post._id !== id)) {
+      try {
+        const res = await getDataAPI(`post/${id}`, auth.token);
+        // console.log(res);
+        dispatch({ type: POST_TYPES.GET_POST, payload: res.data.post });
+      } catch (error) {
+        dispatch({
+          type: GLOBALTYPES.ALERT,
+          payload: { error: error.response.data.msg },
+        });
+      }
+    }
+  };
+
+export const deletePost =
+  ({ post, auth, socket }) =>
+  async (dispatch) => {
+    // console.log({ post, auth });
+    dispatch({ type: POST_TYPES.DELETE_POST, payload: post });
+
+    try {
+      const res = await deleteDataAPI(`post/${post._id}`, auth.token);
+
+      //Powiadomienia
+      const msg = {
+        id: post._id,
+        text: " dodał nową wiadomość.",
+        recipients: res.data.newPost.user.followers,
+        url: `/post/${post._id}`,
+      };
+
+      dispatch(removeNotify({ msg, auth, socket }));
+    } catch (error) {
+      dispatch({
+        type: GLOBALTYPES.ALERT,
+        payload: { error: error.response.data.msg },
+      });
+    }
+  };
+
+export const savePost =
+  ({ post, auth }) =>
+  async (dispatch) => {
+    //console.log({ post, auth });
+    const newUser = { ...auth.user, saved: [...auth.user.saved, post._id] };
+    //console.log(newUser);
+    dispatch({ type: GLOBALTYPES.AUTH, payload: { ...auth, user: newUser } });
+
+    try {
+      await patchtDataAPI(`savePost/${post._id}`, null, auth.token);
+    } catch (error) {
+      dispatch({
+        type: GLOBALTYPES.ALERT,
+        payload: { error: error.response.data.msg },
+      });
+    }
+  };
+
+export const unSavePost =
+  ({ post, auth }) =>
+  async (dispatch) => {
+    //console.log({ post, auth });
+    const newUser = {
+      ...auth.user,
+      saved: auth.user.saved.filter((id) => id !== post._id),
+    };
+    //console.log(newUser);
+    dispatch({ type: GLOBALTYPES.AUTH, payload: { ...auth, user: newUser } });
+
+    try {
+      await patchtDataAPI(`unSavePost/${post._id}`, null, auth.token);
+    } catch (error) {
+      dispatch({
+        type: GLOBALTYPES.ALERT,
+        payload: { error: error.response.data.msg },
+      });
+    }
+  };

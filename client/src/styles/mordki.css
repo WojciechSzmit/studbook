@@ -1,0 +1,19 @@
+.small-avatar {
+  width: 20px;
+  height: 20px;
+}
+
+.medium-avatar {
+  width: 30px;
+  height: 30px;
+}
+
+.big-avatar {
+  width: 50px;
+  height: 50px;
+}
+
+.super-avatar {
+  width: 150px;
+  height: 150px;
+}

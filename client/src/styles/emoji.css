@@ -1,0 +1,9 @@
+.show_me_your_smile {
+  display: grid;
+  grid-template-columns: repeat(4, 50px);
+  text-align: center;
+  cursor: pointer;
+}
+.show_me_your_smile span {
+  margin: 3px 0;
+}

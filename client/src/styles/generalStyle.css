@@ -1,0 +1,135 @@
+* {
+  padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+#theme {
+  display: none;
+}
+
+/*Wyłączanie światła*/
+#theme:checked ~ .App {
+  filter: invert(1);
+}
+
+.App {
+  width: 100%;
+  min-height: 100vh;
+  background: white;
+
+  /*   background-image: linear-gradient(
+    to right,
+    rgba(233, 229, 229, 0),
+    rgb(220, 220, 220)
+  ); */
+}
+
+.main {
+  max-width: 1000px;
+  width: 100%;
+  margin: auto;
+}
+
+img {
+  object-fit: cover;
+}
+
+/*---import css z auth-------*/
+@import url("./login.css");
+
+/*---import css wczytywania...-------*/
+@import url("./loading.css");
+
+/*---import css headera...-------*/
+@import url("./header.css");
+
+/*---import avatar headera...-------*/
+@import url("./mordki.css");
+
+/*---import profile css...-------*/
+@import url("./profile.css");
+
+/*---import home css...-------*/
+@import url("./home.css");
+
+/*---import home post_input_modal...-------*/
+@import url("./post_input_modal.css");
+
+.mode {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/*---Komentarze-------*/
+@import url("./comments.css");
+
+/*---profil foty-------*/
+@import url("./post_miniatures.css");
+
+/*---komunikator-------*/
+@import url("./message.css");
+
+/*---ikonki-------*/
+@import url("./emoji.css");
+
+/* nie znaleziono */
+
+@import url("./czterystacztery.css");
+
+/* RWD */
+
+@media (max-width: 768px) {
+  .header .menu {
+    position: absolute;
+    top: calc(100vh - 50px);
+    left: 0;
+    width: 100%;
+    height: 50px;
+    box-shadow: 0 0 10px #ddd;
+    z-index: 2;
+    background: #f8f9fa;
+    border: 1px solid rgb(0, 0, 0, 0.125);
+  }
+
+  header .menu .navbar-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .header .menu .dropdown-menu {
+    bottom: 50%;
+    top: auto;
+  }
+  .header .search_form {
+    width: 100%;
+  }
+  .header .logo {
+    margin: auto;
+  }
+  .header .logo h1 {
+    font-size: 1.5rem;
+  }
+
+  .wrap_page {
+    margin-bottom: 60px;
+  }
+
+  .message {
+    height: calc(100vh - 150px);
+  }
+}
+
+/* x */
